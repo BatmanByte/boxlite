@@ -71,8 +71,12 @@ describe('BoxManager.syncInstanceState — failed START_BOX accounting', () => {
 
     await manager.syncInstanceState('box-1')
 
-    // The box is still transitioned to ERROR ...
+    // The box is still transitioned to ERROR and the failed START intent is withdrawn.
     expect(updateWhere).toHaveBeenCalledTimes(1)
+    expect(updateWhere.mock.calls[0][1].updateData).toMatchObject({
+      state: BoxState.ERROR,
+      desiredState: BoxDesiredState.STOPPED,
+    })
     // ... and a FAILED START_BOX job is recorded so the reconcile ceiling counts it.
     expect(insert).toHaveBeenCalledTimes(1)
     const job = insert.mock.calls[0][0]
@@ -95,6 +99,10 @@ describe('BoxManager.syncInstanceState — failed START_BOX accounting', () => {
     await manager.syncInstanceState('box-1')
 
     expect(updateWhere).toHaveBeenCalledTimes(1) // still transitions to ERROR
+    expect(updateWhere.mock.calls[0][1].updateData).toMatchObject({
+      state: BoxState.ERROR,
+    })
+    expect(updateWhere.mock.calls[0][1].updateData.desiredState).toBeUndefined()
     expect(insert).not.toHaveBeenCalled() // but no synthetic START_BOX job
   })
 
